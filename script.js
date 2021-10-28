@@ -5,21 +5,31 @@ let numberTo = document.getElementById('numberTo');
 
 window.onload = openPage;
 
-nextButton.addEventListener('click', () => {
-    let params = {
-        page: parseInt(numberFrom.innerHTML)+1,
-        limit: numberTo.innerHTML,
-    };
-    getUsers(params);
-});
+window.addEventListener('scroll', handler);
 
-prevButton.addEventListener('click', () => {
-    let params = {
-        page: parseInt(numberFrom.innerHTML)-1,
-        limit: numberTo.innerHTML,
-    };
-    getUsers(params);
-});
+function handler() {
+    const {
+        scrollTop,
+        scrollHeight,
+        clientHeight
+    } = document.documentElement;
+    if (scrollTop + clientHeight >= scrollHeight - 5) {
+        let params = {
+            page: parseInt(numberFrom.innerHTML) + 1,
+            limit: numberTo.innerHTML
+        }
+        getUsers(params);
+    }
+}
+
+// nextButton.addEventListener('click', () => {
+//     let params = {
+//         page: parseInt(numberFrom.innerHTML) + 1,
+//         limit: numberTo.innerHTML,
+//     };
+//     getUsers(params);
+// });
+
 
 function openPage() {
     let params = {
@@ -30,7 +40,12 @@ function openPage() {
     let url = new URL(window.location.href);
     updateNewValues(url, 'page', params);
     updateNewValues(url, 'limit', params);
-    getUsers(params);
+    const maxPage = params.page;
+    for (let index = 1; index <= maxPage; index++) {
+        params.page = index;
+        getUsers(params);
+    }
+
 }
 
 function updateNewValues(url, name, params) {
@@ -40,9 +55,13 @@ function updateNewValues(url, name, params) {
     }
 }
 
-function updateMyUrl(params) {
+function updateMyUrl(params, response) {
     var myURL = document.location.pathname;
+    if (!response.hasMore) {
+        window.removeEventListener('scroll', handler);
+    }
     window.history.pushState(null, "Title", myURL + `?page=${params.page}&limit=${params.limit}`);
+
 }
 
 function getUsers(params) {
@@ -54,7 +73,7 @@ function getUsers(params) {
             }
             response.json().then(response => {
                 showUsers(response);
-                updateMyUrl(params);
+                updateMyUrl(params, response);
                 updateButtons(params, response);
             });
         })
@@ -65,7 +84,7 @@ function getUsers(params) {
 
 function showUsers(data) {
     let users = document.getElementById('users');
-    users.innerHTML = '';
+    // users.innerHTML = '';
     data.results.forEach(element => {
         let id = document.createElement('div');
         let name = document.createElement('div');
@@ -92,6 +111,6 @@ function showUsers(data) {
 function updateButtons(params, data) {
     numberFrom.innerHTML = params.page;
     numberTo.innerHTML = params.limit;
-    prevButton.disabled = params.page == 1;
+    // prevButton.disabled = params.page == 1;
     nextButton.disabled = !data.hasMore;
 }
